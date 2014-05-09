@@ -7,6 +7,8 @@
 
 
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 /**
  *
@@ -33,6 +40,7 @@ public class Table {
     //ini database nya
     private Map<Integer,List<Map.Entry<Integer,String>>> table;
     private String Nama;
+  
     //contructor
     public Table(String Nama){
         
@@ -43,7 +51,8 @@ public class Table {
     
     
     }
-
+    
+ 
     //getter setter
     public String getNama() {
         return Nama;
@@ -227,6 +236,8 @@ public class Table {
         }else if(pilihan == 5){
             System.out.println("Isi dari Database :");
             System.out.println(DB.List());
+            
+            DB.setDataFromJson(DB.JSonIt());
         }else if(pilihan ==6 ){
             int tokenMin,tokenMax;
             System.out.println("split Table !");
@@ -244,4 +255,78 @@ public class Table {
     
     }
     
+    public String JSonIt(){
+        String jsontext="";
+        JSONObject obj = new JSONObject();
+        //simpen nama table nya
+        obj.put("nama", this.Nama);
+        //simpen panjang table nya
+        //obj.put("tablesize", table.size());
+        //jadiin list nya JsonArray
+       // JSONArray list = new JSONArray();
+       // list.add(table.)
+        Object[] Listkey =  table.keySet().toArray();
+        
+        JSONObject data = new JSONObject(); //buat nyimpen key,value nya
+        //value = list<pair(int,string)> :v
+        for(int i=0;i<table.size();i++){//iterasi tiap key
+            JSONObject entry = new JSONObject();//buat nyimpen list of pair
+            for(int j=0;j<table.get(Listkey[i]).size();j++){
+                
+                //entry.add(j); //masukin pair
+                entry.put(table.get(Listkey[i]).get(j).getKey(), table.get(Listkey[i]).get(j).getValue());
+            }
+            data.put(Listkey[i], entry.toJSONString());
+            //list.add(data.toJSONString());
+        }
+        obj.put("table", data.toJSONString());
+        jsontext =obj.toJSONString();
+        //jsontext = JSONValue.toJSONString(this.table);
+      //  System.out.print(jsontext);
+        System.out.println("hasil json "+jsontext);
+     return jsontext;
+    }
+    
+    public void setDataFromJson(String Json){
+        
+        Object obj=JSONValue.parse(Json);
+        JSONObject data = (JSONObject) obj;
+        String nama = (String) data.get("nama");
+        this.setNama(nama);
+        
+        Object keyMap = JSONValue.parse((String)data.get("table"));
+        JSONObject table = (JSONObject) keyMap;
+        Object[] tableKey = table.keySet().toArray();//key dari data di table
+       
+        //Kontainer baru table
+        Map<Integer,List<Map.Entry<Integer,String>>> newTable =  new HashMap<Integer,List<Map.Entry<Integer,String>>>();
+        
+        for(int i=0;i<table.size();i++){//iterasi table
+            //sekarang buka value tiapkey
+            //value= List<pair(timestamp,value)>
+            //implementasi nya -> JSONObject(timestamp,value);
+            Object timestampMap =JSONValue.parse((String)table.get(tableKey[i]));
+            JSONObject timestamp = (JSONObject) timestampMap;
+            Object[] timestampKey = timestamp.keySet().toArray();//timestamp dari data di table
+            System.out.println("key : "+tableKey[i]+" value : "+timestamp.toJSONString());
+            
+            //buat kontainetList yang nyimpen Map,Entry
+            List<Map.Entry<Integer,String>> nList = new ArrayList<>();
+            for(int j=0;j<timestamp.size();j++){//iterasi data di tiap time stamp
+                //bacapasangan key,value
+                System.out.println("timestamp : "+timestampKey[j]+" value : "+timestamp.get(timestampKey[j]));
+                //buat pair Timestamp , value
+                String times = (String) timestampKey[j];
+                Map.Entry<Integer,String> newData = new AbstractMap.SimpleEntry<>(Integer.parseInt(times),(String)timestamp.get(timestampKey[j]));
+                nList.add(newData);
+            }
+            //masukin List  ke dalam Map key,value :v
+            newTable.put(Integer.parseInt((String)tableKey[i]), nList);
+        }
+        
+        //set table dengan hasil baca tadi
+        this.setTable(newTable);
+        
+       
+    }
 }
