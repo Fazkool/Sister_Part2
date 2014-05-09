@@ -106,11 +106,11 @@ public class Database {
        return result;
   
   }
-public Database splitDatabase(){
+public Database splitDatabase(int tokenMin, int tokenMax){
     Database newDB = new Database();
     //int length = database.size()/2;
     for(int i=0;i<database.size();i++){  
-        newDB.getDatabase().add(database.get(i).splitTable());
+        newDB.getDatabase().add(database.get(i).splitTable(tokenMin,tokenMax));
     }
     
     System.out.println("DataBase splited !");

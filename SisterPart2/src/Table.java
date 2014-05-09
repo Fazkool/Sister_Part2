@@ -123,7 +123,7 @@ public class Table {
         }
     return result;
     }
-   public Table splitTable(){
+   public Table splitTable(int tokenMin , int tokenMax){
        Table T = new Table(Nama);
        int length = this.table.size()/2;
       // Iterator it = table.entrySet().iterator();
@@ -131,14 +131,15 @@ public class Table {
       // for(int j=0;j<length;j++)
       //      it.next();
        Object[] Listkey =  table.keySet().toArray();
-      for(i=length;i<table.size();i++){
+      for(i=0;i<table.size();i++){
            //pindahin datanya
           System.out.println("test "+i);
            // Map.Entry pairs = (Map.Entry)it.next();
            // List<Map.Entry<Integer,String>> newL=(List<Map.Entry<Integer,String>>) pairs.getValue();
-            T.table.put( (Integer) Listkey[i], table.get(Listkey[i]));
-            delete((Integer)Listkey[i]);
-            
+            if((Integer) Listkey[i] > tokenMin && (Integer) Listkey[i] <= tokenMax){
+                T.table.put( (Integer) Listkey[i], table.get(Listkey[i]));
+                delete((Integer)Listkey[i]);
+            }
             //it.remove();
            
        }
@@ -227,9 +228,14 @@ public class Table {
             System.out.println("Isi dari Database :");
             System.out.println(DB.List());
         }else if(pilihan ==6 ){
+            int tokenMin,tokenMax;
             System.out.println("split Table !");
-            System.out.println("panjnag data awal : "+DB.table.size());
-            System.out.println("panjnag data di Table Baru : "+DB.splitTable().table.size());
+            System.out.println("Masukan token min !");
+            tokenMin=scan.nextInt();
+            System.out.println("Masukan token max !");
+            tokenMax=scan.nextInt();
+            System.out.println("panjang data awal : "+DB.table.size());
+            System.out.println("panjang data di Table Baru : "+DB.splitTable(tokenMin,tokenMax).table.size());
             System.out.println("panjang data akhir : "+DB.table.size());
         }
 
