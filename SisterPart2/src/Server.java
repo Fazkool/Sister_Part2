@@ -177,14 +177,10 @@ public class Server extends Thread
             out.writeUTF(input);
             InputStream inFromServer = client.getInputStream();
             DataInputStream in = new DataInputStream(inFromServer);
-            System.out.println("Server says " + in.readUTF());
+            System.out.println("Tracker says " + in.readUTF());
         // }
         //matiin client nya
-	
-        //baca jawaban dari server
-        inFromServer = client.getInputStream();
-        in = new DataInputStream(inFromServer);
-        System.out.println("Server says " + in.readUTF()); 
+
         client.close();
       }catch(IOException e)
       {
