@@ -4,16 +4,44 @@
 
 import java.net.*;
 import java.io.*;
+import java.util.ArrayList;
 
 public class Tracker extends Thread
 {
    private ServerSocket serverSocket;
    
+   //DATA TRACKER
+   private ArrayList<Integer> ArrPort;
+   private ArrayList<String> ArrIp;
+   private ArrayList<Integer> TokenMin;
+   private ArrayList<Integer> TokenMax;
+   
    public Tracker(int port) throws IOException
    {
       serverSocket = new ServerSocket(port);
+      ArrPort = new ArrayList<Integer>();
+      ArrIp = new ArrayList<String>();
+      TokenMin = new ArrayList<>();
+      TokenMax = new ArrayList<>();
    }
 
+   public String getIp(int token){
+       String st = new String();
+       for(int i = 0;i<ArrIp.size();i++){
+           if(token >= TokenMin.get(i) && token <= TokenMax.get(i)){
+               return ArrIp.get(i);
+           }
+       }
+       return st;
+   }
+   
+   public void addServer(String server,int port){
+       ArrIp.add(server);
+       ArrPort.add(port);
+       TokenMax.add(TokenMax.get(TokenMin.size()-1)-1);
+       TokenMin.add((TokenMax.get(TokenMax.size()-1)+1)/2);
+   }
+           
    public void run()
    {
       while(true)
@@ -32,48 +60,14 @@ public class Tracker extends Thread
                 inputClient = in.readUTF();
                 System.out.println(inputClient);
                 
-                //TOKENING INPUTAN CLIENT
                 String[] tokenString = inputClient.split(" ");
                 
-                String message = "";
-                
-                if(tokenString[0].equals("exit")){
-                    //ini yang dikirim ke client
-                    System.out.println("Closing Connection");
-                    DataOutputStream out = new DataOutputStream(server.getOutputStream());
-                    out.writeUTF("Thank you for connecting");
-                    //tutup server nya
-                    server.close();
-                    break;
-                }else if(tokenString[0].equals("create")){
-                    if(tokenString.length != 3){
-                        System.out.println("Parameter tidak sesuai");
-                        message = "parameter tidak sesuai";
-                    }else{
-                        System.out.println("Command Create Table");
-                        message = database.createTable(tokenString[2]);
-                    }
-                }else if(tokenString[0].equals("insert")){
-                    if(tokenString.length != 4){
-                        System.out.println("Parameter tidak sesuai");
-                    }else{
-                        System.out.println("Command insert");
-                        message = database.insert(tokenString[1], tokenString[2], tokenString[3]);
-                    }
-                }else if(tokenString[0].equals("display")){
-                    if(tokenString.length != 2){
-                        System.out.println("Parameter tidak sesuai");
-                        message = "parameter tidak sesuai";
-                    }else{
-                        System.out.println("Command display");
-                        message = database.display(tokenString[1]);
-                    }
-                }else{
-                    System.out.println("Command Tidak Dikenali");
-                    message = "Command tidak dikenali";
+                if(tokenString[0].equals("addServer")){
+                    
                 }
+                
                 DataOutputStream out = new DataOutputStream(server.getOutputStream());
-                out.writeUTF(message);
+                out.writeUTF("YAY");
             }
         }catch(SocketTimeoutException s)
         {
@@ -88,10 +82,10 @@ public class Tracker extends Thread
    }
    public static void main(String [] args)
    {
-      int port = Integer.parseInt(args[0]);
+      //int port = Integer.parseInt(args[0]);
       try
       {
-         Thread t = new Server(port);
+         Thread t = new Tracker(12312);
          t.start();
       }catch(IOException e)
       {
