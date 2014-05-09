@@ -73,7 +73,7 @@ public class Database {
           //System.out.println("Sudah ada table dengan nama tersebut di database !");
           
           result =getTable(namaTable).List();
-      
+          System.out.println("isi result : "+result);
       }else{
           
           System.out.println("Tidak ada Table dengan nama : "+namaTable);
@@ -146,16 +146,40 @@ public Database splitDatabase(int tokenMin, int tokenMax){
         //baca string json nya
          Object obj=JSONValue.parse(Json);
          JSONArray data = (JSONArray) obj;
-         this.database.clear();
+         ///this.database.clear();
          List<Table> newDB = new ArrayList <Table>();
          //iterasi array nya buat masukin data ke table
          for(int i =0;i<data.size();i++){
              Table T = new Table("dummy");
+             
              T.setDataFromJson((String)data.get(i));
              //table sudah di update , masukan ke database
+            System.out.println("nama table : "+T.getNama());
              boolean add = newDB.add(T);
          }
     
     }
-    
+     public static void main(String[] args) {
+         Database DB = new Database();
+         Table a = new Table("test");
+         a.create(1, "ampas");
+         a.create(2, "ampas");
+         
+         Table b = new Table("test2");
+         b.create(1, "ampaswswsws");
+         b.create(2, "ampasswswswswsw");
+         
+         DB.getDatabase().add(a);
+         DB.getDatabase().add(b);
+         DB.JsonIt();
+         DB.setDataFromJson(DB.splitDatabase(0, 1).JsonIt());
+         for(int i=0;i<DB.getDatabase().size();i++)
+            System.out.println("nama : "+DB.getDatabase().get(i).getNama());
+        
+         DB.display("test");
+         
+         DB.display("test2");
+         
+         
+     }
 }

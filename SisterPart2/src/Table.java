@@ -294,7 +294,7 @@ public class Table {
         JSONObject data = (JSONObject) obj;
         String nama = (String) data.get("nama");
         this.setNama(nama);
-        this.table.clear();
+       // this.table.clear();
         Object keyMap = JSONValue.parse((String)data.get("table"));
         JSONObject table = (JSONObject) keyMap;
         Object[] tableKey = table.keySet().toArray();//key dari data di table
