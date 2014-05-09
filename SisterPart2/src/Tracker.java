@@ -67,7 +67,7 @@ public class Tracker extends Thread
                 }
                 
                 DataOutputStream out = new DataOutputStream(server.getOutputStream());
-                out.writeUTF("YAY");
+                out.writeUTF("Hello Thank you for connecting");
             }
         }catch(SocketTimeoutException s)
         {
