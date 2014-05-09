@@ -4,6 +4,7 @@
 
 import java.net.*;
 import java.io.*;
+import java.util.Scanner;
 
 public class Server extends Thread
 {
@@ -11,13 +12,74 @@ public class Server extends Thread
    
    private Database database = new Database();
    
+   private int tokenMin,tokenMax,trackerPort;
+   String trackerIP;
+   
    public Server(int port) throws IOException
    {
       serverSocket = new ServerSocket(port);
    }
 
+    public Server(ServerSocket serverSocket,Database newDB, int trackerPort, String trackerIP) {
+        
+        this.database = newDB;
+        this.serverSocket = serverSocket;
+        this.tokenMin = tokenMin;
+        this.tokenMax = tokenMax;
+        this.trackerPort = trackerPort;
+        this.trackerIP = trackerIP;
+    }
+
+    public int getTrackerPort() {
+        return trackerPort;
+    }
+
+    public String getTrackerIP() {
+        return trackerIP;
+    }
+
+    public int getTokenMin() {
+        return tokenMin;
+    }
+
+    public int getTokenMax() {
+        return tokenMax;
+    }
+
+    public Database getDatabase() {
+        return database;
+    }
+
+    public void setDatabase(Database database) {
+        this.database = database;
+    }
+
+    public void setServerSocket(ServerSocket serverSocket) {
+        this.serverSocket = serverSocket;
+    }
+
+    public ServerSocket getServerSocket() {
+        return serverSocket;
+    }
+
+    public void setTrackerPort(int trackerPort) {
+        this.trackerPort = trackerPort;
+    }
+
+    public void setTrackerIP(String trackerIP) {
+        this.trackerIP = trackerIP;
+    }
+
+    public void setTokenMin(int tokenMin) {
+        this.tokenMin = tokenMin;
+    }
+
+    public void setTokenMax(int tokenMax) {
+        this.tokenMax = tokenMax;
+    }
+
    public void run()
-   {
+   {    
       while(true)
       {
          try
@@ -88,6 +150,51 @@ public class Server extends Thread
         }
       }
    }
+   
+   public boolean onCreate(){
+    boolean trackerFound =false;
+         try
+      {
+         System.out.println("Connecting to " + trackerIP
+                             + " on port " + trackerPort);
+         Socket client = new Socket(trackerIP, trackerPort);
+         System.out.println("Just connected to "
+                      + client.getRemoteSocketAddress());
+          
+         String input = "";
+         
+       //  while(!input.equals("exit")){
+            System.out.print(">");
+             
+            Scanner sc;
+            sc = new Scanner(System.in);
+            input = sc.nextLine();
+             
+            //kirim data ke server
+            OutputStream outToServer = client.getOutputStream();
+            DataOutputStream out = new DataOutputStream(outToServer);
+
+            out.writeUTF(input);
+            InputStream inFromServer = client.getInputStream();
+            DataInputStream in = new DataInputStream(inFromServer);
+            System.out.println("Server says " + in.readUTF());
+        // }
+        //matiin client nya
+	
+        //baca jawaban dari server
+        inFromServer = client.getInputStream();
+        in = new DataInputStream(inFromServer);
+        System.out.println("Server says " + in.readUTF()); 
+        client.close();
+      }catch(IOException e)
+      {
+         e.printStackTrace();
+      }
+    
+    
+    return trackerFound;
+   }
+   
    public static void main(String [] args)
    {
       int port = Integer.parseInt(args[0]);
