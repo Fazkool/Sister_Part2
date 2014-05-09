@@ -10,6 +10,7 @@
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -30,13 +31,13 @@ public class Table {
     public static int timestamp=0;
     
     //ini database nya
-    private Map<String,List<Map.Entry<Integer,String>>> table;
+    private Map<Integer,List<Map.Entry<Integer,String>>> table;
     private String Nama;
     //contructor
     public Table(String Nama){
         
     this.Nama = Nama;    
-    table = new HashMap<String,List<Map.Entry<Integer,String>>>();    
+    table = new HashMap<Integer,List<Map.Entry<Integer,String>>>();    
     System.out.println("Table Created !\n Table Name : "+this.Nama);
     
     
@@ -48,11 +49,11 @@ public class Table {
         return Nama;
     }
 
-    public Map<String, List<Map.Entry<Integer, String>>> getTable() {
+    public Map<Integer, List<Map.Entry<Integer, String>>> getTable() {
         return table;
     }
 
-    public void setTable(Map<String, List<Map.Entry<Integer, String>>> table) {
+    public void setTable(Map<Integer, List<Map.Entry<Integer, String>>> table) {
         this.table = table;
     }
 
@@ -61,7 +62,7 @@ public class Table {
     }
     
     //fungsi
-    public String create(String Key,String Value){
+    public String create(Integer Key,String Value){
         //cek apakah data sudah ada dengan key berikut
        String result="";
         if(table.isEmpty()||!table.containsKey(Key)){
@@ -85,7 +86,7 @@ public class Table {
     return result;
     }
     
-    public void read(String Key){
+    public void read(Integer Key){
         //cek apakah data sudah ada di database
         if(table.containsKey(Key)){
             //daya ada di database
@@ -100,7 +101,7 @@ public class Table {
     
     }
     
-    public String update(String Key,String Value){
+    public String update(Integer Key,String Value){
         String result="";
         //cek apakah data ada di database
         if(table.containsKey(Key)){
@@ -122,8 +123,29 @@ public class Table {
         }
     return result;
     }
-        
-    public void delete(String Key){
+   public Table splitTable(){
+       Table T = new Table(Nama);
+       int length = this.table.size()/2;
+      // Iterator it = table.entrySet().iterator();
+       int i = 0;
+      // for(int j=0;j<length;j++)
+      //      it.next();
+       Object[] Listkey =  table.keySet().toArray();
+      for(i=length;i<table.size();i++){
+           //pindahin datanya
+          System.out.println("test "+i);
+           // Map.Entry pairs = (Map.Entry)it.next();
+           // List<Map.Entry<Integer,String>> newL=(List<Map.Entry<Integer,String>>) pairs.getValue();
+            T.table.put( (Integer) Listkey[i], table.get(Listkey[i]));
+            delete((Integer)Listkey[i]);
+            
+            //it.remove();
+           
+       }
+       T.List();
+   return T;
+   }     
+    public void delete(int Key){
      //cek apakah data ada di database
         if(table.containsKey(Key)){
             List<Map.Entry<Integer, String>> removedData = table.remove(Key);
@@ -158,9 +180,11 @@ public class Table {
     return result;
     }
     
-    
-    
-    /*
+   public int getSize(){
+       return this.table.size();
+   
+   
+   }
     
     public static void main(String[] args) {
         // TODO code application logic here
@@ -174,38 +198,44 @@ public class Table {
         System.out.println("3.Update Data");
         System.out.println("4.Delete Data");
         System.out.println("5.List Data");
+         System.out.println("6.Split Data");
 
         System.out.println("Silahkan Masukan Pilihan Anda ! \n");
         int pilihan =  scan.nextInt();
         if(pilihan == 1){
             System.out.println("Masukan Key dari data yang akan disimpan :");
-            String Key =   scan.next();
+            int Key =   scan.nextInt();
             System.out.println("Masukan Value dari data yang akan disimpan :");
             String Value =  scan.next();
             DB.create(Key, Value);
         }else if(pilihan == 2){
            System.out.println("Masukan Key dari data yang akan disimpan :");
-            String Key =   scan.next();
+            int Key =   scan.nextInt();
             DB.read(Key);
         }else if(pilihan == 3){
             System.out.println("Masukan Key dari data yang akan Dirubah :");
-            String Key =   scan.next();
+            int Key =   scan.nextInt();
             System.out.println("Masukan Value dari data yang akan Dirubah :");
             String Value =  scan.next();
             DB.update(Key, Value);
         
         }else if(pilihan == 4){
             System.out.println("Masukan Key dari data yang akan di Delete :");
-            String Key =   scan.next();
+            int Key =   scan.nextInt();
             DB.delete(Key);
         }else if(pilihan == 5){
             System.out.println("Isi dari Database :");
-            DB.List();
+            System.out.println(DB.List());
+        }else if(pilihan ==6 ){
+            System.out.println("split Table !");
+            System.out.println("panjnag data awal : "+DB.table.size());
+            System.out.println("panjnag data di Table Baru : "+DB.splitTable().table.size());
+            System.out.println("panjang data akhir : "+DB.table.size());
         }
 
     }
     
     
     }
-    */
+    
 }

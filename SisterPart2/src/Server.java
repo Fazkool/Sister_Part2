@@ -18,6 +18,9 @@ public class Server extends Thread
    public Server(int port) throws IOException
    {
       serverSocket = new ServerSocket(port);
+      trackerIP="localhost";
+      trackerPort=12312;
+      onCreate();
    }
 
     public Server(ServerSocket serverSocket,Database newDB, int trackerPort, String trackerIP) {
@@ -122,7 +125,7 @@ public class Server extends Thread
                         System.out.println("Parameter tidak sesuai");
                     }else{
                         System.out.println("Command insert");
-                        message = database.insert(tokenString[1], tokenString[2], tokenString[3]);
+                        message = database.insert(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
                     }
                 }else if(tokenString[0].equals("display")){
                     if(tokenString.length != 2){
@@ -189,6 +192,13 @@ public class Server extends Thread
     
     
     return trackerFound;
+   }
+   public boolean searchInTable(){
+    boolean found = false;
+    
+    
+    
+    return found;
    }
    
    public static void main(String [] args)

@@ -39,6 +39,14 @@ public class Database {
     }
   return T;
   }
+
+    public void setDatabase(List<Table> database) {
+        this.database = database;
+    }
+
+    public List<Table> getDatabase() {
+        return database;
+    }
   
   public String createTable(String namaTable){
       //check apakah table dengan nama tersebut sudah ada
@@ -86,7 +94,7 @@ public class Database {
   
   }
   
-  public String insert(String namaTable, String Key, String Value){
+  public String insert(String namaTable, int Key, String Value){
       //check apakah table dengan nama tersebut sudah ada
       String result=null;
       if(isContainTable(namaTable)){ //sudah ada table dengan nama ini
@@ -98,6 +106,24 @@ public class Database {
        return result;
   
   }
-  
+public Database splitDatabase(){
+    Database newDB = new Database();
+    //int length = database.size()/2;
+    for(int i=0;i<database.size();i++){  
+        newDB.getDatabase().add(database.get(i).splitTable());
+    }
+    
+    System.out.println("DataBase splited !");
+    
+    
+    return newDB;
+}
+
+    public int getSize(){
+        int size =0;
+        for(int i=0;i<this.database.size();i++)
+            size += database.get(i).getSize();
+    return size;
+    }
   
 }
