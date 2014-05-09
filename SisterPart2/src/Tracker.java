@@ -29,17 +29,42 @@ public class Tracker extends Thread
        String st = new String();
        for(int i = 0;i<ArrIp.size();i++){
            if(token >= TokenMin.get(i) && token <= TokenMax.get(i)){
-               return ArrIp.get(i);
+               return ArrIp.get(i) + " " + ArrPort.get(i);
            }
        }
        return st;
    }
    
    public void addServer(String server,int port){
+       int biggestServer = getBiggestServer();
+       
+       //ADD ALAMAT PORT
        ArrIp.add(server);
        ArrPort.add(port);
-       TokenMax.add(TokenMax.get(TokenMin.size()-1)-1);
-       TokenMin.add((TokenMax.get(TokenMax.size()-1)+1)/2);
+       
+       //ADD TOKEN PADA SERVER YANG INGIN DITAMBAH
+       TokenMax.add(TokenMax.get(biggestServer));
+       TokenMin.add((int)((long)(TokenMax.get(biggestServer)+1)/2));
+       
+       //POTONG UKURAN TOKEN YANG DIBAGI
+       TokenMax.set(biggestServer,TokenMin.get(TokenMin.size()-1)-1);
+       
+   }
+   
+   public int getBiggestServer(){
+       int maxServer = 0;
+       
+       for(int i = 0;i < ArrIp.size();i++){
+           if(TokenMax.get(i) - TokenMin.get(i) > maxServer){
+               maxServer = TokenMax.get(i) - TokenMin.get(i);
+           }
+       }
+       return maxServer;
+   }
+   
+   public void migrateDB(int tokenMin,int tokenMax,String fromIP, int fromPort,String toIP, int toPort){
+       //BUAT KONEKSI KE SERVER YANG AKAN DIKIRIM DATANYA
+       
    }
            
    public void run()
@@ -53,6 +78,8 @@ public class Tracker extends Thread
             Socket server = serverSocket.accept();
             System.out.println("Just connected to " + server.getRemoteSocketAddress());
 			
+            String message = "Command Salah";
+            
             while(true){
                 //baca data dari client	  
                 DataInputStream in = new DataInputStream(server.getInputStream());
@@ -63,11 +90,34 @@ public class Tracker extends Thread
                 String[] tokenString = inputClient.split(" ");
                 
                 if(tokenString[0].equals("addServer")){
+                    //CARI SERVER YANG HARUS DIMIGRASI
+                    int migrateServer = getBiggestServer();                            
+                    
+                    //TAMBAHIN KE TABEL SERVER
+                    addServer(server.getLocalAddress().toString(),server.getLocalPort());
+                    
+                    //KIRIM JUMLAH TOKEN KE YANG MINTA
+                    message = TokenMax.get(TokenMax.size()-1) + " " + TokenMin.get(TokenMin.size()-1);
+                    DataOutputStream out = new DataOutputStream(server.getOutputStream());
+                    out.writeUTF(message);
+                   
+                    
                     
                 }
                 
-                DataOutputStream out = new DataOutputStream(server.getOutputStream());
-                out.writeUTF("Hello Thank you for connecting");
+                else if(tokenString[0].equals("request") && tokenString.length == 2){
+                    try{
+                        message = getIp(Integer.parseInt(tokenString[1]));
+                    }catch(Exception e){
+                        message = "NAN";
+                    }
+                }else{
+                    DataOutputStream out = new DataOutputStream(server.getOutputStream());
+                    //out.writeUTF("Hello Thank you for connecting");
+                    out.writeUTF("COMMAND SALAH");
+                }
+                
+                server.close();
             }
         }catch(SocketTimeoutException s)
         {
