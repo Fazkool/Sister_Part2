@@ -5,6 +5,9 @@
 
 import java.util.List;
 import java.util.ArrayList;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 /**
  *
@@ -125,5 +128,34 @@ public Database splitDatabase(int tokenMin, int tokenMax){
             size += database.get(i).getSize();
     return size;
     }
-  
+
+    public String JsonIt(){
+        String jsontext="";
+        //struktur database
+        // listof table
+        //pake Json aRRAY :v
+        JSONArray ja = new JSONArray();
+        for(int i=0;i<database.size();i++)
+            ja.add(database.get(i).JSonIt());
+        jsontext = ja.toJSONString();
+        System.out.println("isi Database : "+jsontext);
+    return jsontext;
+    }
+    
+    public void setDataFromJson(String Json){
+        //baca string json nya
+         Object obj=JSONValue.parse(Json);
+         JSONArray data = (JSONArray) obj;
+         this.database.clear();
+         List<Table> newDB = new ArrayList <Table>();
+         //iterasi array nya buat masukin data ke table
+         for(int i =0;i<data.size();i++){
+             Table T = new Table("dummy");
+             T.setDataFromJson((String)data.get(i));
+             //table sudah di update , masukan ke database
+             boolean add = newDB.add(T);
+         }
+    
+    }
+    
 }

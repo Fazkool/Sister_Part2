@@ -195,7 +195,7 @@ public class Table {
    
    
    }
-    
+    /*
     public static void main(String[] args) {
         // TODO code application logic here
     Table DB = new Table("Test");
@@ -255,6 +255,7 @@ public class Table {
     
     }
     
+    */
     public String JSonIt(){
         String jsontext="";
         JSONObject obj = new JSONObject();
@@ -293,7 +294,7 @@ public class Table {
         JSONObject data = (JSONObject) obj;
         String nama = (String) data.get("nama");
         this.setNama(nama);
-        
+        this.table.clear();
         Object keyMap = JSONValue.parse((String)data.get("table"));
         JSONObject table = (JSONObject) keyMap;
         Object[] tableKey = table.keySet().toArray();//key dari data di table
