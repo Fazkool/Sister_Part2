@@ -15,8 +15,11 @@ public class Server extends Thread
    private int tokenMin,tokenMax,trackerPort;
    String trackerIP;
    
+   int myPort;
+   
    public Server(int port) throws IOException
    {
+      myPort = port;
       serverSocket = new ServerSocket(port);
       trackerIP="localhost";
       trackerPort=12312;
@@ -208,21 +211,12 @@ public class Server extends Thread
          Socket client = new Socket(trackerIP, trackerPort);
          System.out.println("Just connected to "
                       + client.getRemoteSocketAddress());
-          
-         String input = "";
          
-       //  while(!input.equals("exit")){
-            System.out.print(">");
-             
-            Scanner sc;
-            sc = new Scanner(System.in);
-            input = sc.nextLine();
-             
             //kirim data ke server
             OutputStream outToServer = client.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
 
-            out.writeUTF(input);
+            out.writeUTF("addServer " + myPort);
             InputStream inFromServer = client.getInputStream();
             DataInputStream in = new DataInputStream(inFromServer);
             System.out.println("Tracker says " + in.readUTF());
@@ -230,6 +224,7 @@ public class Server extends Thread
         //matiin client nya
 
         client.close();
+        trackerFound = true;
       }catch(IOException e)
       {
          e.printStackTrace();
@@ -329,6 +324,12 @@ public class Server extends Thread
             DataInputStream in = new DataInputStream(inFromServer);
             System.out.println("Tracker says " + in.readUTF());
             list = in.readUTF();
+            
+            String[] lists;
+            lists = list.split(" ");
+            tokenMin = Integer.parseInt(lists[0]);
+            tokenMax = Integer.parseInt(lists[1]);
+            
         }catch(Exception e){
         
         e.printStackTrace();

@@ -17,7 +17,7 @@ public class Tracker extends Thread
    private ArrayList<Integer> TokenMax;
    private ArrayList<String> arrTable;
    
-   private int maxInitToken = 65535;
+   private final Integer maxInitToken = 100000;
    
    public Tracker(int port) throws IOException
    {
@@ -26,6 +26,7 @@ public class Tracker extends Thread
       ArrIp = new ArrayList<String>();
       TokenMin = new ArrayList<>();
       TokenMax = new ArrayList<>();
+      arrTable = new ArrayList<>();
    }
 
    public String getIp(int token){
@@ -47,29 +48,32 @@ public class Tracker extends Thread
        
        //ADD TOKEN PADA SERVER YANG INGIN DITAMBAH
        //HANDLE JUMLAH SERVER 0
-       if(ArrIp.size() == 0){
+       if(ArrIp.size() == 1){
            TokenMax.add(maxInitToken);
            TokenMin.add(0);
        }else{
             //HANDLE JUMLAH SERVER NORMAL
             TokenMax.add(TokenMax.get(biggestServer));
-            TokenMin.add((int)((long)(TokenMax.get(biggestServer)+1)/2));
+            TokenMin.add((TokenMax.get(biggestServer)+TokenMin.get(biggestServer))/2);
+            //POTONG UKURAN TOKEN YANG DIBAGI
+            TokenMax.set(biggestServer,TokenMin.get(TokenMin.size()-1)-1);
        }
        
-       //POTONG UKURAN TOKEN YANG DIBAGI
-       TokenMax.set(biggestServer,TokenMin.get(TokenMin.size()-1)-1);
+       
        
    }
    
    public int getBiggestServer(){
        int maxServer = 0;
+       int idx = 0;
        
        for(int i = 0;i < ArrIp.size();i++){
            if(TokenMax.get(i) - TokenMin.get(i) > maxServer){
                maxServer = TokenMax.get(i) - TokenMin.get(i);
+               idx = i;
            }
        }
-       return maxServer;
+       return idx;
    }
    
    public void migrateDB(int tokenMin,int tokenMax,String fromIP, int fromPort,String toIP, int toPort) throws IOException{
@@ -121,6 +125,18 @@ public class Tracker extends Thread
        }
    }
            
+   
+   public void displayStatus(){
+       System.out.println("Kondisi Server");
+       for(int i = 0;i<ArrIp.size();i++){
+           System.out.println(i + ". " + ArrIp.get(i) + ":" + ArrPort.get(i) + " " + TokenMin.get(i) + " " + TokenMax.get(i));    
+       }
+       System.out.println("\n\nKondisi Table");
+       for(int i = 0;i<arrTable.size();i++){
+           System.out.println(arrTable.get(i));
+       }
+   }
+   
    @Override
    public void run()
    {
@@ -149,10 +165,10 @@ public class Tracker extends Thread
                     int migrateServerIdx = getBiggestServer();                            
                     
                     //TAMBAHIN KE TABEL SERVER
-                    addServer(server.getLocalAddress().toString(),server.getLocalPort());
+                    addServer(server.getInetAddress().toString(),Integer.parseInt(tokenString[1]));
                     
                     //KIRIM JUMLAH TOKEN KE YANG MINTA
-                    message = TokenMax.get(TokenMax.size()-1) + " " + TokenMin.get(TokenMin.size()-1);
+                    message = TokenMin.get(TokenMin.size()-1) + " " + TokenMax.get(TokenMin.size()-1);
                     DataOutputStream out = new DataOutputStream(server.getOutputStream());
                     out.writeUTF(message);
                     server.close();//DUMMY CLOSE
@@ -175,10 +191,12 @@ public class Tracker extends Thread
                     }
                     
                     //KIRIM PERINTAH KE SERVER TERBESAR UNTUK MIGRASI DATA
-                    String portFrom = tokenString[1];//DAPETIN PORT SERVER TUJUAN
-                    if(ArrIp.size()>0){
-                        migrateDB(0, 100, ArrIp.get(migrateServerIdx), ArrPort.get(migrateServerIdx), portFrom, MIN_PRIORITY);
+                    if(ArrIp.size()>1){
+                        //String portFrom = tokenString[1];//DAPETIN PORT SERVER TUJUAN
+                        //migrateDB(0, 100, ArrIp.get(migrateServerIdx), ArrPort.get(migrateServerIdx), portFrom, MIN_PRIORITY);
                     }
+                    displayStatus();
+                    break;
                 }
                 
                 else if(tokenString[0].equals("request") && tokenString.length == 2){//PESAN REQUEST IP DARI TOKEN
@@ -194,14 +212,24 @@ public class Tracker extends Thread
                     //TABLE BERHASIL DIBUAT DI SEMUA SERVER
                 }
                 
+
+                else if(tokenString[0].equals("display") && tokenString.length == 2){//HANDLE DISPLAY
+                    
+                }
+                
+                else if(tokenString[0].equals("exit")){//EXIT KELUAR LOOP
+                    server.close();
+                    break;
+                }
+                
                 else{
                     DataOutputStream out = new DataOutputStream(server.getOutputStream());
                     //out.writeUTF("Hello Thank you for connecting");
                     out.writeUTF("COMMAND SALAH");
                 }
                 
-                if(server!=null){
-                    server.close();
+                if(server!=null && !server.isClosed()){
+                    //server.close();
                 }
             }
         }catch(SocketTimeoutException s)
