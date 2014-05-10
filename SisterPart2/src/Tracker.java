@@ -50,14 +50,11 @@ public class Tracker extends Thread
        if(ArrIp.size() == 0){
            TokenMax.add(maxInitToken);
            TokenMin.add(0);
+       }else{
+            //HANDLE JUMLAH SERVER NORMAL
+            TokenMax.add(TokenMax.get(biggestServer));
+            TokenMin.add((int)((long)(TokenMax.get(biggestServer)+1)/2));
        }
-       
-       //ADD SELURUH TABLE YANG ADA
-       
-       
-       //HANDLE JUMLAH SERVER NORMAL
-       TokenMax.add(TokenMax.get(biggestServer));
-       TokenMin.add((int)((long)(TokenMax.get(biggestServer)+1)/2));
        
        //POTONG UKURAN TOKEN YANG DIBAGI
        TokenMax.set(biggestServer,TokenMin.get(TokenMin.size()-1)-1);
@@ -163,14 +160,25 @@ public class Tracker extends Thread
                     
                     //BIKIN SELURUH TABLE DI SERVER BARU
                     for(int i = 0;i<arrTable.size();i++){
-                        Socket serverTable = new Socket(ArrIp.get(ArrIp.size()-1),ArrPort.get(ArrPort.size()));//NYAMBUNG KE SERVER BARU
+                        //NGEBIKIN KONEKSI + AMBIL STREAM
+                        Socket serverTable = new Socket(ArrIp.get(ArrIp.size()-1),ArrPort.get(ArrPort.size()-1));//NYAMBUNG KE SERVER BARU
+                        OutputStream outToServer = serverTable.getOutputStream();
+                        DataOutputStream outt = new DataOutputStream(outToServer);
+                        
+                        //NGEBIKIN TABLE
+                        outt.writeUTF("create table " + arrTable.get(i));
+                        InputStream inFromServer = serverTable.getInputStream();
+                        DataInputStream inn = new DataInputStream(inFromServer);
+                        System.out.println("Server says " + inn.readUTF());
+                        serverTable.close();
                         
                     }
                     
                     //KIRIM PERINTAH KE SERVER TERBESAR UNTUK MIGRASI DATA
                     String portFrom = tokenString[1];//DAPETIN PORT SERVER TUJUAN
-                    migrateDB(0, 100, ArrIp.get(migrateServerIdx), ArrPort.get(migrateServerIdx), portFrom, MIN_PRIORITY);
-                                 
+                    if(ArrIp.size()>0){
+                        migrateDB(0, 100, ArrIp.get(migrateServerIdx), ArrPort.get(migrateServerIdx), portFrom, MIN_PRIORITY);
+                    }
                 }
                 
                 else if(tokenString[0].equals("request") && tokenString.length == 2){//PESAN REQUEST IP DARI TOKEN
