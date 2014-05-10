@@ -101,7 +101,7 @@ public class Server extends Thread
         }
         catch(Exception e){
         
-        
+        e.printStackTrace();
        }
     
     
@@ -157,7 +157,7 @@ public class Server extends Thread
                         
                         //check apakah key masuk dalam range token server atau tidak
                         if(Integer.parseInt(tokenString[2])>=tokenMin &&Integer.parseInt(tokenString[2])>=tokenMax)
-                        message = database.insert(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
+                            message = database.insert(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
                         else
                             message = insertOnAnotherServer(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
                     }
@@ -167,9 +167,20 @@ public class Server extends Thread
                         message = "parameter tidak sesuai";
                     }else{
                         System.out.println("Command display");
-                        message = database.display(tokenString[1]);
+                        //message = database.display(tokenString[1]);
+                        message = listOnAllServer(tokenString[1]);
                     }
-                }else{
+                 }else if(tokenString[0].equals("displayTracker")){
+                    if(tokenString.length != 2){
+                        System.out.println("Parameter tidak sesuai");
+                        message = "parameter tidak sesuai";
+                    }else{
+                        System.out.println("Command display");
+                        message = database.display(tokenString[1]);
+                        //message = listOnAllServer(tokenString[1]);
+                    }
+                }
+                else{
                     System.out.println("Command Tidak Dikenali");
                     message = "Command tidak dikenali";
                 }
@@ -294,4 +305,35 @@ public class Server extends Thread
         }
         return message;
     }
+
+
+    private String listOnAllServer(String namaTable){
+        String list="";
+        try{
+        //hubungin tracker , tracker bakal minta semua serve ngirim list nya , dan di urutin
+        //hubungin tracker tanya token dengan nilai key , ada di serve mana
+        System.out.println("Connecting to " + trackerIP
+                             + " on port " + trackerPort);
+         Socket client = new Socket(trackerIP, trackerPort);
+         System.out.println("Just connected to "
+                      + client.getRemoteSocketAddress());
+          
+          
+         
+            //kirim data ke tracker
+            OutputStream outToServer = client.getOutputStream();
+            DataOutputStream out = new DataOutputStream(outToServer);
+
+            out.writeUTF("display "+namaTable);
+            InputStream inFromServer = client.getInputStream();
+            DataInputStream in = new DataInputStream(inFromServer);
+            System.out.println("Tracker says " + in.readUTF());
+            list = in.readUTF();
+        }catch(Exception e){
+        
+        e.printStackTrace();
+        }
+        return list;
+    }
+
 }
