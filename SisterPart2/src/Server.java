@@ -22,7 +22,7 @@ public class Server extends Thread
       trackerPort=12312;
       onCreate();
    }
-
+   
     public Server(ServerSocket serverSocket,Database newDB, int trackerPort, String trackerIP) {
         
         this.database = newDB;
@@ -81,6 +81,32 @@ public class Server extends Thread
         this.tokenMax = tokenMax;
     }
 
+    public void createTableOnAllServer(String tableName){
+     try{
+        System.out.println("Connecting to " + trackerIP
+                             + " on port " + trackerPort);
+         Socket tracker = new Socket(trackerIP, trackerPort);
+         System.out.println("Just connected to "
+                      + tracker.getRemoteSocketAddress());     
+            //kirim data ke Tracker
+            OutputStream outToServer = tracker.getOutputStream();
+            DataOutputStream out = new DataOutputStream(outToServer);
+            out.writeUTF("create "+tableName);
+            
+            //baca jawaban server
+            InputStream inFromServer = tracker.getInputStream();
+            DataInputStream in = new DataInputStream(inFromServer);
+            System.out.println("Tracker says " + in.readUTF());    
+        
+        }
+        catch(Exception e){
+        
+        
+       }
+    
+    
+    }
+    
    public void run()
    {    
       while(true)
@@ -118,6 +144,9 @@ public class Server extends Thread
                         message = "parameter tidak sesuai";
                     }else{
                         System.out.println("Command Create Table");
+                        //kasih tau server lain buat bikin table dengan nama ini
+                        createTableOnAllServer(tokenString[2]);
+                        ////////
                         message = database.createTable(tokenString[2]);
                     }
                 }else if(tokenString[0].equals("insert")){
@@ -125,7 +154,12 @@ public class Server extends Thread
                         System.out.println("Parameter tidak sesuai");
                     }else{
                         System.out.println("Command insert");
+                        
+                        //check apakah key masuk dalam range token server atau tidak
+                        if(Integer.parseInt(tokenString[2])>=tokenMin &&Integer.parseInt(tokenString[2])>=tokenMax)
                         message = database.insert(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
+                        else
+                            message = insertOnAnotherServer(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
                     }
                 }else if(tokenString[0].equals("display")){
                     if(tokenString.length != 2){
@@ -213,4 +247,51 @@ public class Server extends Thread
          e.printStackTrace();
       }
    }
+
+    private String insertOnAnotherServer(String tableName, int Key, String Value) {
+        String message ="";
+        try{
+        //hubungin tracker tanya token dengan nilai key , ada di serve mana
+        System.out.println("Connecting to " + trackerIP
+                             + " on port " + trackerPort);
+         Socket client = new Socket(trackerIP, trackerPort);
+         System.out.println("Just connected to "
+                      + client.getRemoteSocketAddress());
+          
+          
+         
+            //kirim data ke tracker
+            OutputStream outToServer = client.getOutputStream();
+            DataOutputStream out = new DataOutputStream(outToServer);
+
+            out.writeUTF("request "+Key);
+            InputStream inFromServer = client.getInputStream();
+            DataInputStream in = new DataInputStream(inFromServer);
+            System.out.println("Tracker says " + in.readUTF());
+          
+        
+        //kembalian dari server dengan format IP , port
+        String[] trackerAnswer = in.readUTF().split(" ");  
+        //hubungin server yang memiliki key , kemudian buat di server tersebut message
+         System.out.println("Connecting to " + trackerAnswer[0]
+                             + " on port " + trackerAnswer[1]);
+         Socket anotherServer = new Socket(trackerAnswer[0],Integer.parseInt(trackerAnswer[1]));
+         System.out.println("Just connected to "
+                      + anotherServer.getRemoteSocketAddress());
+          
+            //kirim data ke tracker
+            outToServer = anotherServer.getOutputStream();
+            out = new DataOutputStream(outToServer);
+
+            out.writeUTF("insert "+tableName+" "+Key+" "+Value);
+            inFromServer = anotherServer.getInputStream();
+            in = new DataInputStream(inFromServer);
+            System.out.println("Tracker says " + in.readUTF());
+          
+            message = in.readUTF();
+        }catch(Exception e){
+        
+        }
+        return message;
+    }
 }
