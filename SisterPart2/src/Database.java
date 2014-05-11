@@ -157,6 +157,7 @@ public Database splitDatabase(int tokenMin, int tokenMax){
             System.out.println("nama table : "+T.getNama());
              boolean add = newDB.add(T);
          }
+         database = newDB;
     
     }
      public static void main(String[] args) {

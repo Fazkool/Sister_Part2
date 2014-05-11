@@ -5,6 +5,7 @@
 import java.net.*;
 import java.io.*;
 import java.util.Scanner;
+import javax.swing.JOptionPane;
 
 public class Server extends Thread
 {
@@ -21,6 +22,16 @@ public class Server extends Thread
    {
       myPort = port;
       serverSocket = new ServerSocket(port);
+      
+      try{
+          Scanner sc = new Scanner("tracker.txt");
+          trackerIP = sc.next();
+          trackerPort = sc.nextInt();
+      }catch(Exception e){
+          JOptionPane.showMessageDialog(null, "file tracker.txt tidak ada");
+          System.exit(1);
+      }
+      
       trackerIP="localhost";
       trackerPort=12312;
       onCreate();
@@ -96,10 +107,7 @@ public class Server extends Thread
             DataOutputStream out = new DataOutputStream(outToServer);
             out.writeUTF("create "+tableName);
             
-            //baca jawaban server
-            InputStream inFromServer = tracker.getInputStream();
-            DataInputStream in = new DataInputStream(inFromServer);
-            System.out.println("Tracker says " + in.readUTF());    
+            tracker.close();
         
         }
         catch(Exception e){
@@ -142,28 +150,41 @@ public class Server extends Thread
                     server.close();
                     break;
                 }else if(tokenString[0].equals("create")){
-                    if(tokenString.length != 3){
+                    if(tokenString.length != 3 && tokenString.length != 4){
                         System.out.println("Parameter tidak sesuai");
                         message = "parameter tidak sesuai";
-                    }else{
+                    }else if(tokenString.length ==3){
                         System.out.println("Command Create Table");
                         //kasih tau server lain buat bikin table dengan nama ini
                         createTableOnAllServer(tokenString[2]);
                         ////////
                         message = database.createTable(tokenString[2]);
+                        DataOutputStream out = new DataOutputStream(server.getOutputStream());
+                        out.writeUTF(message);
+                        
+                    }else{//LENGTH = 4
+                        database.createTable(tokenString[3]);
                     }
-                }else if(tokenString[0].equals("insert")){
+                    server.close();
+                    break;
+                }
+                
+                else if(tokenString[0].equals("insert")){
                     if(tokenString.length != 4){
                         System.out.println("Parameter tidak sesuai");
                     }else{
                         System.out.println("Command insert");
                         
                         //check apakah key masuk dalam range token server atau tidak
-                        if(Integer.parseInt(tokenString[2])>=tokenMin &&Integer.parseInt(tokenString[2])>=tokenMax)
+                        if(Integer.parseInt(tokenString[2])>=tokenMin &&Integer.parseInt(tokenString[2])<=tokenMax)
                             message = database.insert(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
                         else
                             message = insertOnAnotherServer(tokenString[1], Integer.parseInt(tokenString[2]), tokenString[3]);
                     }
+                    DataOutputStream out = new DataOutputStream(server.getOutputStream());
+                    out.writeUTF(message);
+                    server.close();
+                    break;
                 }else if(tokenString[0].equals("display")){
                     if(tokenString.length != 2){
                         System.out.println("Parameter tidak sesuai");
@@ -171,8 +192,13 @@ public class Server extends Thread
                     }else{
                         System.out.println("Command display");
                         //message = database.display(tokenString[1]);
-                        message = listOnAllServer(tokenString[1]);
+                        message = database.display(tokenString[1]);
+                        message += listOnAllServer(tokenString[1]);
                     }
+                    DataOutputStream out = new DataOutputStream(server.getOutputStream());
+                    out.writeUTF(message);
+                    server.close();
+                    break;
                  }else if(tokenString[0].equals("displayTracker")){
                     if(tokenString.length != 2){
                         System.out.println("Parameter tidak sesuai");
@@ -182,13 +208,25 @@ public class Server extends Thread
                         message = database.display(tokenString[1]);
                         //message = listOnAllServer(tokenString[1]);
                     }
+                    DataOutputStream out = new DataOutputStream(server.getOutputStream());
+                    out.writeUTF(message);
+                    server.close();
+                    break;
+                }else if(tokenString[0].equals("migrate") && tokenString.length == 5){
+                    
+                    sendDatabase(tokenString[1],Integer.parseInt(tokenString[2]),Integer.parseInt(tokenString[3]),Integer.parseInt(tokenString[4]));
+                    server.close();
+                    System.out.println("Database SENT");
+                    break;
                 }
                 else{
                     System.out.println("Command Tidak Dikenali");
                     message = "Command tidak dikenali";
+                    DataOutputStream out = new DataOutputStream(server.getOutputStream());
+                    out.writeUTF(message);
+                    server.close();
+                    break;
                 }
-                DataOutputStream out = new DataOutputStream(server.getOutputStream());
-                out.writeUTF(message);
             }
         }catch(SocketTimeoutException s)
         {
@@ -219,12 +257,39 @@ public class Server extends Thread
             out.writeUTF("addServer " + myPort);
             InputStream inFromServer = client.getInputStream();
             DataInputStream in = new DataInputStream(inFromServer);
-            System.out.println("Tracker says " + in.readUTF());
+            
+            String list = in.readUTF();
+            
+            System.out.println("Tracker says " + list);
+            
+            String[] lists;
+            lists = list.split(" ");
+            
+            tokenMin = Integer.parseInt(lists[0]);
+            tokenMax = Integer.parseInt(lists[1]);
+            //System.out.println("mytoken " + tokenMin + " " + tokenMax);
         // }
         //matiin client nya
 
         client.close();
         trackerFound = true;
+        
+        //SIAP" MENERIMA DATABASE
+        if(tokenMin !=  0){
+            //MENERIMA KONEKSI
+            System.out.println("ACCEPTING DATABASE");
+            Socket acceptDatabase = serverSocket.accept();
+            
+            //MEMBUAT DATABASE DARI KIRIMAN
+            DataInputStream inn = new DataInputStream(acceptDatabase.getInputStream());
+            String inputClient;
+            inputClient = inn.readUTF();
+            database.setDataFromJson(inputClient);
+            acceptDatabase.close();
+        }
+        System.out.println("Database Accepted");
+        
+            
       }catch(IOException e)
       {
          e.printStackTrace();
@@ -233,6 +298,24 @@ public class Server extends Thread
     
     return trackerFound;
    }
+   
+   //BUAT KIRIM DATABASE
+   public void sendDatabase(String ipDest,int portDest,int tokenMin,int tokenMax) throws IOException{
+       //TESTING
+       System.out.println("Disuruh migrasi data ke " + ipDest + ":" + portDest + " dari token " + tokenMin + " ampe " + tokenMax);
+
+       //POTONG DATABASE
+       Database databaseKirim = database.splitDatabase(tokenMin, tokenMax);
+       
+        this.tokenMax = tokenMin-1;
+        System.out.println("Token gw jadi " + this.tokenMin + " " + this.tokenMax);
+        Socket kirim = new Socket(ipDest,portDest);
+        DataOutputStream out = new DataOutputStream(kirim.getOutputStream());
+        out.writeUTF(databaseKirim.JsonIt());
+        out.close();
+       
+   }
+   
    public boolean searchInTable(){
     boolean found = false;
     
@@ -273,11 +356,14 @@ public class Server extends Thread
             out.writeUTF("request "+Key);
             InputStream inFromServer = client.getInputStream();
             DataInputStream in = new DataInputStream(inFromServer);
-            System.out.println("Tracker says " + in.readUTF());
+
+            String theKey = in.readUTF();
           
+            client.close();
+            
         
         //kembalian dari server dengan format IP , port
-        String[] trackerAnswer = in.readUTF().split(" ");  
+        String[] trackerAnswer = theKey.split(" ");  
         //hubungin server yang memiliki key , kemudian buat di server tersebut message
          System.out.println("Connecting to " + trackerAnswer[0]
                              + " on port " + trackerAnswer[1]);
@@ -292,9 +378,11 @@ public class Server extends Thread
             out.writeUTF("insert "+tableName+" "+Key+" "+Value);
             inFromServer = anotherServer.getInputStream();
             in = new DataInputStream(inFromServer);
-            System.out.println("Tracker says " + in.readUTF());
-          
             message = in.readUTF();
+            System.out.println("Tracker says " + message);
+          
+
+            anotherServer.close();
         }catch(Exception e){
         
         }
@@ -319,16 +407,16 @@ public class Server extends Thread
             OutputStream outToServer = client.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
 
-            out.writeUTF("display "+namaTable);
+            out.writeUTF("display "+namaTable + " " +  myPort);
             InputStream inFromServer = client.getInputStream();
             DataInputStream in = new DataInputStream(inFromServer);
-            System.out.println("Tracker says " + in.readUTF());
-            list = in.readUTF();
             
-            String[] lists;
-            lists = list.split(" ");
-            tokenMin = Integer.parseInt(lists[0]);
-            tokenMax = Integer.parseInt(lists[1]);
+            String lists = in.readUTF();
+            
+            System.out.println("Tracker says " + lists);
+            list = lists;
+            client.close();
+            
             
         }catch(Exception e){
         
@@ -338,3 +426,5 @@ public class Server extends Thread
     }
 
 }
+
+
